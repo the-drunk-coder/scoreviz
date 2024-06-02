@@ -69,19 +69,22 @@ oscPort.on("message", function (msg) {
     case "/note/add": {
 	var stave = msg.args[0].value;
 	var note = msg.args[1].value;
+	var dur = msg.args[2].value;
 	
 	if (staves[stave] === undefined) {
 	    staves[stave] = [];
 	}
 	
-	staves[stave].push(new VF.StaveNote({ keys: [note], duration: "q" }));
+	//staves[stave].push(new VF.StaveNote({ keys: [note], duration: dur }));
+	staves[stave] = [new VF.StaveNote({ keys: [note], duration: dur })];
 
 	render();
 
 	break;
     }
     case "/clear": {	  	  
-	
+	self.staves = {}
+	div.innerHTML = '';
     }
     }            
 });
