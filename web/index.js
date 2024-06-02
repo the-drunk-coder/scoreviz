@@ -10,33 +10,46 @@ function render(name) {
     div.innerHTML = '';
     
     var renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-
-    let vis_len = 500; //staves[name].length * 100;
+    
+    var max_len = 0;
     
     // Configure the rendering context.
-    renderer.resize(vis_len, 500);
+    
     
     var context = renderer.getContext();
     context.setFont("Arial", 10, "").setBackgroundFillStyle("#eed");
-    
-    // Create a stave of dynamic width at position 10, 40 on the canvas.
-    var stave = new VF.Stave(10, 40, vis_len);
-    
-    // Add a clef and time signature.
-    stave.addClef("treble")
-    
-    var voice = new VF.Voice({num_beats: staves[name].length,  beat_value: 4}).setStrict(false);
 
-    // Connect it to the rendering context and draw!
-    stave.setContext(context).draw();
+    var v_idx = 0;
     
-    // Create a voice in 4/4 and add above notes
-    voice.addTickables(staves[name])
+    for (const [key, notes] of Object.entries(staves)) {
+	let vis_len = 40 + notes.length * 30;
 
-    var formatter = new VF.Formatter().joinVoices([voice]).format([voice], 400);
+	if (vis_len > max_len) {
+	    renderer.resize(vis_len, 500);
+	    max_len = vis_len;
+	}
+	
+	// Create a stave of dynamic width at position 10, 40 on the canvas.
+	var stave = new VF.Stave(10, 40 + (100 * v_idx), vis_len);
 
-    // Render voice
-    voice.draw(context, stave);
+	v_idx = v_idx + 1;
+	
+	// Add a clef and time signature.
+	stave.addClef("treble")
+	
+	var voice = new VF.Voice({num_beats: notes.length,  beat_value: 1}).setStrict(false);
+
+	// Connect it to the rendering context and draw!
+	stave.setContext(context).draw();
+	
+	// Create a voice in 4/4 and add above notes
+	voice.addTickables(notes)
+
+	var formatter = new VF.Formatter().joinVoices([voice]).format([voice], notes.length * 30);
+
+	// Render voice
+	voice.draw(context, stave);
+    }       
 }
 
 var oscPort = new osc.WebSocketPort({
@@ -64,7 +77,7 @@ oscPort.on("message", function (msg) {
 	
 	staves[stave].push(new VF.StaveNote({ keys: [note], duration: "q" }));
 
-	render(stave);
+	render();
 
 	break;
     }
