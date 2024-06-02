@@ -13,15 +13,13 @@ function render(name) {
     
     var max_len = 0;
     
-    // Configure the rendering context.
-    
-    
+    // Configure the rendering context.    
     var context = renderer.getContext();
-    context.setFont("Arial", 10, "").setBackgroundFillStyle("#eed");
+    context.setFont("Mononoki", 10, "").setBackgroundFillStyle("#eed");
 
     var v_idx = 0;
     
-    for (const [key, notes] of Object.entries(staves)) {
+    for (const [name, notes] of Object.entries(staves)) {
 	let vis_len = 40 + notes.length * 30;
 
 	if (vis_len > max_len) {
@@ -31,18 +29,19 @@ function render(name) {
 	
 	// Create a stave of dynamic width at position 10, 40 on the canvas.
 	var stave = new VF.Stave(10, 40 + (100 * v_idx), vis_len);
-
+			
 	v_idx = v_idx + 1;
 	
 	// Add a clef and time signature.
-	stave.addClef("treble")
+	stave.addClef("treble");
 	
 	var voice = new VF.Voice({num_beats: notes.length,  beat_value: 1}).setStrict(false);
-
+	
 	// Connect it to the rendering context and draw!
 	stave.setContext(context).draw();
 	
 	// Create a voice in 4/4 and add above notes
+
 	voice.addTickables(notes)
 
 	var formatter = new VF.Formatter().joinVoices([voice]).format([voice], notes.length * 30);
