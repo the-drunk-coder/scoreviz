@@ -1,4 +1,4 @@
-# Mégra Visualizer
+# scoreviz
 
 A simple, browser-based score visualizer for live scoring over OSC.
 
