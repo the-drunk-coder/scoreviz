@@ -1,0 +1,9 @@
+{
+    "name": "scoreviz-web-app",
+    "version": "0.0.1",
+    "ignore": [],
+    "dependencies": {
+        "osc": "2.4.0",
+        "vexflow": "^4.2.4"
+    }
+}
