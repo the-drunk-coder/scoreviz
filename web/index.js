@@ -5,6 +5,17 @@ var div = document.getElementById("boo")
 
 var staves = {};
 
+// desired functions:
+// - name staves
+// - position staves
+// - group staves, i.e. put a color background
+// - [x] stave history, between 1 and 4 notes?
+// - dynamic mark on stave
+// - clef for stave
+// - [x] color "active" note
+// - names for staves
+// - cute additions 
+
 function render(name) {
     // clear score first ... this is not very efficient I suppose,    
     div.innerHTML = '';
@@ -74,10 +85,18 @@ oscPort.on("message", function (msg) {
 	if (staves[stave] === undefined) {
 	    staves[stave] = [];
 	}
+     
+	staves[stave].push(new VF.StaveNote({ keys: [note], duration: dur }));
 	
-	//staves[stave].push(new VF.StaveNote({ keys: [note], duration: dur }));
-	staves[stave] = [new VF.StaveNote({ keys: [note], duration: dur })];
+	if (staves[stave].length > 3) {
+	    staves[stave].shift();
+	}
 
+	// set the current note to a different color ...
+	staves[stave][0].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
+	staves[stave][1].setStyle({ fillStyle: "#FF0000", strokeStyle: "#FF0000" })
+	staves[stave][2].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
+		
 	render();
 
 	break;
