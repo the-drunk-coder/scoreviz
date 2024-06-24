@@ -6,15 +6,19 @@ var div = document.getElementById("boo")
 var staves = {};
 
 // desired functions:
-// - [x] name staves
-// - position staves
+
 // - group staves, i.e. put a color background
+// - transpose notes according to clef
+// - cute additions (emojis for playing style ?)
+// - "snippet mode" bs "rt mode (change always, mark current)"
+
+// - [x] position staves
+// - [x] name staves
 // - [x] stave history, between 1 and 4 notes?
 // - [x] dynamic mark on stave
 // - [x] clef for stave
-//   - transpose notes according to clef 
 // - [x] color "active" note
-// - cute additions (emojis for playing style ?)
+
 
 function render(name) {
     // clear score first ... this is not very efficient I suppose,    
@@ -24,8 +28,6 @@ function render(name) {
     
     var max_len = 0;
     var spacing = 60;
-
-
     
     // Configure the rendering context.    
     var context = renderer.getContext();
@@ -34,7 +36,7 @@ function render(name) {
     var v_idx = 0;
     
     for (const [name, stave_props] of Object.entries(staves)) {
-	let vis_len = 40 + stave_props.notes.length * spacing;
+	let vis_len = stave_props.x + stave_props.notes.length * spacing;
 
 	if (vis_len > max_len) {
 	    renderer.resize(vis_len, 500);
@@ -42,7 +44,7 @@ function render(name) {
 	}
 	 
 	// Create a stave of dynamic width at position 10, 40 on the canvas.
-	var stave = new VF.Stave(10, spacing + (100 * v_idx), vis_len);
+	var stave = new VF.Stave(stave_props.x, stave_props.y, vis_len);
 			
 	v_idx = v_idx + 1;
 	
@@ -105,11 +107,29 @@ oscPort.open();
 oscPort.on("message", function (msg) {
 
     switch(msg.address) {
-	
+
+    case "/voice/pos": {
+	var stave = msg.args[0].value;
+	var x = msg.args[1].value;
+	var y = msg.args[2].value;	
+
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+		
+	staves[stave].x = x;
+	staves[stave].y = y;
+			
+	break;
+    }	
     case "/voice/dyn": {
 	var stave = msg.args[0].value;
 	var dyn = msg.args[1].value;	
 
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
 	staves[stave].dyn = dyn;
 
 	break;
@@ -118,6 +138,10 @@ oscPort.on("message", function (msg) {
 	var stave = msg.args[0].value;
 	var clef = msg.args[1].value;
 
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
 	staves[stave].clef = clef;
 
 	break;
@@ -142,6 +166,14 @@ oscPort.on("message", function (msg) {
 
 	if (staves[stave].dyn === undefined) {
 	    staves[stave].dyn = "p";
+	}
+
+	if (staves[stave].x === undefined) {
+	    staves[stave].x = 10;
+	}
+
+	if (staves[stave].y === undefined) {
+	    staves[stave].y = 10 + 100 * (Object.keys(staves).length - 1);
 	}
      
 	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur }));
