@@ -7,11 +7,13 @@ var staves = {};
 
 // desired functions:
 
-// - group staves, i.e. put a color background
+// - score name
+// - group staves, 
 // - transpose notes according to clef
 // - cute additions (emojis for playing style ?)
 // - "snippet mode" bs "rt mode (change always, mark current)"
 
+// - [x] put a color background
 // - [x] position staves
 // - [x] name staves
 // - [x] stave history, between 1 and 4 notes?
@@ -31,11 +33,16 @@ function render(name) {
     
     // Configure the rendering context.    
     var context = renderer.getContext();
-    context.setFont("mononoki", 10, "").setBackgroundFillStyle("#eed");
-
+    // this has no effect ?
+    
+    context.setFont("mononoki", 10, "");
+    
     var v_idx = 0;
+
+    let svg = document.getElementsByTagName('svg')[0];
     
     for (const [name, stave_props] of Object.entries(staves)) {
+	
 	let vis_len = stave_props.x + stave_props.notes.length * spacing;
 
 	if (vis_len > max_len) {
@@ -45,7 +52,22 @@ function render(name) {
 	 
 	// Create a stave of dynamic width at position 10, 40 on the canvas.
 	var stave = new VF.Stave(stave_props.x, stave_props.y, vis_len);
-			
+
+	// create a background color if defined, as an SVG rectangle
+	// (vexflow doesn't have facilities for this by itself)
+	if (stave_props.bgcolor) {
+	    var svgns = "http://www.w3.org/2000/svg";
+	    var rect = document.createElementNS(svgns, 'rect');
+
+	    rect.setAttributeNS(null, 'x', stave_props.x);
+	    rect.setAttributeNS(null, 'y', stave_props.y + 12);
+	    rect.setAttributeNS(null, 'height', 90);
+	    rect.setAttributeNS(null, 'width', vis_len);
+	    rect.setAttributeNS(null, 'fill', '#' + stave_props.bgcolor);
+	    
+	    svg.appendChild(rect);
+	}
+				
 	v_idx = v_idx + 1;
 	
 	// Add a clef and time signature.
@@ -93,7 +115,7 @@ function render(name) {
 	// Render voice
 	voice.draw(context, stave);
 	stave_name.setContext(context).draw();
-	dyn.setContext(context).draw();
+	dyn.setContext(context).draw();	
     }       
 }
 
@@ -105,9 +127,9 @@ var oscPort = new osc.WebSocketPort({
 oscPort.open();
 
 oscPort.on("message", function (msg) {
-
+    
     switch(msg.address) {
-
+	
     case "/voice/pos": {
 	var stave = msg.args[0].value;
 	var x = msg.args[1].value;
@@ -116,10 +138,22 @@ oscPort.on("message", function (msg) {
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
 	}
-		
+	
 	staves[stave].x = x;
 	staves[stave].y = y;
-			
+	
+	break;
+    }
+    case "/voice/bgcolor": {
+	var stave = msg.args[0].value;
+	var col = msg.args[1].value;
+	
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
+	staves[stave].bgcolor = col;
+		
 	break;
     }	
     case "/voice/dyn": {
