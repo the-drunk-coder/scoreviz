@@ -4,6 +4,6 @@
     "ignore": [],
     "dependencies": {
         "osc": "2.4.0",
-        "vexflow": "^4.2.4"
+        "vexflow4": "4.2.5"
     }
 }

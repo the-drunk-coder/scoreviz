@@ -9,10 +9,10 @@ var staves = {};
 
 // - score name
 // - group staves, 
-// - transpose notes according to clef
 // - cute additions (emojis for playing style ?)
 // - "snippet mode" bs "rt mode (change always, mark current)"
 
+// - [x] transpose notes according to clef (vexflow does it after all)
 // - [x] put a color background
 // - [x] position staves
 // - [x] name staves
@@ -210,7 +210,7 @@ oscPort.on("message", function (msg) {
 	    staves[stave].y = 10 + 100 * (Object.keys(staves).length - 1);
 	}
      
-	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur }));
+	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
 	
 	if (staves[stave].notes.length > 3) {
 	    staves[stave].notes.shift();
