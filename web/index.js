@@ -4,6 +4,7 @@ const VF = Vex.Flow;
 var div = document.getElementById("boo")
 
 var staves = {};
+var textfields = {};
 
 // desired functions:
 
@@ -11,6 +12,7 @@ var staves = {};
 // - group staves, 
 // - cute additions (emojis for playing style ?)
 // - "snippet mode" bs "rt mode (change always, mark current)"
+// - text snippets in random positions
 
 // - [x] transpose notes according to clef (vexflow does it after all)
 // - [x] put a color background
@@ -21,8 +23,7 @@ var staves = {};
 // - [x] clef for stave
 // - [x] color "active" note
 
-
-function render(name) {
+function render() {
     // clear score first ... this is not very efficient I suppose,    
     div.innerHTML = '';
     
@@ -40,15 +41,13 @@ function render(name) {
     var v_idx = 0;
 
     let svg = document.getElementsByTagName('svg')[0];
-    
+   
+    // render staves 
     for (const [name, stave_props] of Object.entries(staves)) {
 	
 	let vis_len = stave_props.x + stave_props.notes.length * spacing;
 
-	if (vis_len > max_len) {
-	    renderer.resize(vis_len, 500);
-	    max_len = vis_len;
-	}
+	renderer.resize(1000, 1000);
 	 
 	// Create a stave of dynamic width at position 10, 40 on the canvas.
 	var stave = new VF.Stave(stave_props.x, stave_props.y, vis_len);
@@ -116,7 +115,20 @@ function render(name) {
 	voice.draw(context, stave);
 	stave_name.setContext(context).draw();
 	dyn.setContext(context).draw();	
-    }       
+    }
+
+
+    // render textfields
+    for (const [name, textfield_props] of Object.entries(textfields)) {
+	var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+	text.setAttributeNS(null, 'x', textfield_props.x);
+	text.setAttributeNS(null, 'y', textfield_props.y);
+	text.setAttributeNS(null, 'fill', '#000');
+	text.textContent =  textfield_props.content;
+	
+	console.log(text);
+	svg.appendChild(text);
+    }
 }
 
 var oscPort = new osc.WebSocketPort({
@@ -223,6 +235,25 @@ oscPort.on("message", function (msg) {
 		
 	render();
 
+	break;
+    }
+    case "/textfield/content": {
+	var textfield = msg.args[0].value;
+	var content = msg.args[1].value;
+	var x = msg.args[2].value;
+	var y = msg.args[3].value;
+
+	if (textfields[textfield] === undefined) {
+	    textfields[textfield] = {};
+	}
+	
+	textfields[textfield].x = x;		
+	textfields[textfield].y = y;	
+
+	textfields[textfield].content = content;
+	
+	render();
+	
 	break;
     }
     case "/clear": {	  	  
