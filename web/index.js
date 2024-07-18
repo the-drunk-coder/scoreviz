@@ -57,14 +57,22 @@ function render() {
 	if (stave_props.bgcolor) {
 	    var svgns = "http://www.w3.org/2000/svg";
 	    var rect = document.createElementNS(svgns, 'rect');
-
 	    rect.setAttributeNS(null, 'x', stave_props.x);
 	    rect.setAttributeNS(null, 'y', stave_props.y + 12);
 	    rect.setAttributeNS(null, 'height', 90);
 	    rect.setAttributeNS(null, 'width', vis_len);
 	    rect.setAttributeNS(null, 'fill', '#' + stave_props.bgcolor);
-	    
 	    svg.appendChild(rect);
+	}
+
+	if (stave_props.label) {
+	    var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+	    label.setAttributeNS(null, 'x', stave_props.x + vis_len + 12);
+	    label.setAttributeNS(null, 'y', stave_props.y - 30);
+	    label.setAttributeNS(null, 'fill', '#000');
+	    label.setAttributeNS(null, 'font-size', '30');
+	    label.textContent = stave_props.label;
+	    svg.appendChild(label);	   
 	}
 				
 	v_idx = v_idx + 1;
@@ -124,9 +132,7 @@ function render() {
 	text.setAttributeNS(null, 'x', textfield_props.x);
 	text.setAttributeNS(null, 'y', textfield_props.y);
 	text.setAttributeNS(null, 'fill', '#000');
-	text.textContent =  textfield_props.content;
-	
-	console.log(text);
+	text.textContent = textfield_props.content;
 	svg.appendChild(text);
     }
 }
@@ -166,6 +172,18 @@ oscPort.on("message", function (msg) {
 	
 	staves[stave].bgcolor = col;
 		
+	break;
+    }
+    case "/voice/label": {
+	var stave = msg.args[0].value;
+	var label = msg.args[1].value;
+	
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
+	staves[stave].label = label;
+	
 	break;
     }	
     case "/voice/dyn": {
