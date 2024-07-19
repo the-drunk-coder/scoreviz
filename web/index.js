@@ -68,7 +68,7 @@ function render() {
 	if (stave_props.label) {
 	    var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 	    label.setAttributeNS(null, 'x', stave_props.x + vis_len + 12);
-	    label.setAttributeNS(null, 'y', stave_props.y - 30);
+	    label.setAttributeNS(null, 'y', stave_props.y + 70);
 	    label.setAttributeNS(null, 'fill', '#000');
 	    label.setAttributeNS(null, 'font-size', '30');
 	    label.textContent = stave_props.label;
@@ -183,6 +183,8 @@ oscPort.on("message", function (msg) {
 	}
 	
 	staves[stave].label = label;
+
+	render();
 	
 	break;
     }	
