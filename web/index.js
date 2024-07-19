@@ -12,8 +12,8 @@ var textfields = {};
 // - group staves, 
 // - cute additions (emojis for playing style ?)
 // - "snippet mode" bs "rt mode (change always, mark current)"
-// - text snippets in random positions
 
+// - [x] text snippets in random positions
 // - [x] transpose notes according to clef (vexflow does it after all)
 // - [x] put a color background
 // - [x] position staves
@@ -24,6 +24,7 @@ var textfields = {};
 // - [x] color "active" note
 
 function render() {
+
     // clear score first ... this is not very efficient I suppose,    
     div.innerHTML = '';
     
@@ -41,17 +42,17 @@ function render() {
     var v_idx = 0;
 
     let svg = document.getElementsByTagName('svg')[0];
-   
+
     // render staves 
     for (const [name, stave_props] of Object.entries(staves)) {
-	
+
 	let vis_len = stave_props.x + stave_props.notes.length * spacing;
 
 	renderer.resize(1000, 1000);
 	 
 	// Create a stave of dynamic width at position 10, 40 on the canvas.
 	var stave = new VF.Stave(stave_props.x, stave_props.y, vis_len);
-
+	
 	// create a background color if defined, as an SVG rectangle
 	// (vexflow doesn't have facilities for this by itself)
 	if (stave_props.bgcolor) {
@@ -64,7 +65,7 @@ function render() {
 	    rect.setAttributeNS(null, 'fill', '#' + stave_props.bgcolor);
 	    svg.appendChild(rect);
 	}
-
+	
 	if (stave_props.label) {
 	    var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 	    label.setAttributeNS(null, 'x', stave_props.x + vis_len + 12);
@@ -147,7 +148,21 @@ oscPort.open();
 oscPort.on("message", function (msg) {
     
     switch(msg.address) {
+
+
+    case "/voice/markcurrent": {
+	// whether the current note should be marked
+	var stave = msg.args[0].value;
+	var mark = msg.args[1].value;
+
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+
+	staves[stave].markcurrent = Boolean(mark === 'true');
 	
+	break;
+    }	
     case "/voice/pos": {
 	var stave = msg.args[0].value;
 	var x = msg.args[1].value;
@@ -159,6 +174,8 @@ oscPort.on("message", function (msg) {
 	
 	staves[stave].x = x;
 	staves[stave].y = y;
+
+	render();
 	
 	break;
     }
@@ -171,6 +188,8 @@ oscPort.on("message", function (msg) {
 	}
 	
 	staves[stave].bgcolor = col;
+
+	render();
 		
 	break;
     }
@@ -241,18 +260,24 @@ oscPort.on("message", function (msg) {
 	if (staves[stave].y === undefined) {
 	    staves[stave].y = 10 + 100 * (Object.keys(staves).length - 1);
 	}
+
+	if (staves[stave].markcurrent === undefined) {
+	    staves[stave].markcurrent = Boolean(false);
+	}
      
 	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
 	
 	if (staves[stave].notes.length > 3) {
 	    staves[stave].notes.shift();
 	}
-
-	// set the current note to a different color ...
-	staves[stave].notes[0].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
-	staves[stave].notes[1].setStyle({ fillStyle: "#FF0000", strokeStyle: "#FF0000" })
-	staves[stave].notes[2].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
-		
+	
+	if (staves[stave].markcurrent) {
+	    // set the current note to a different color ...
+	    staves[stave].notes[0].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
+	    staves[stave].notes[1].setStyle({ fillStyle: "#FF0000", strokeStyle: "#FF0000" })
+	    staves[stave].notes[2].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
+	}
+			
 	render();
 
 	break;
