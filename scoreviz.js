@@ -23,7 +23,7 @@ var getIPAddresses = function () {
 // Bind to a UDP socket to listen for incoming OSC events.
 var udpPort = new osc.UDPPort({
     localAddress: "0.0.0.0",
-    localPort: 57121
+    localPort: 57123
 });
 
 udpPort.on("ready", function () {
@@ -32,7 +32,7 @@ udpPort.on("ready", function () {
     ipAddresses.forEach(function (address) {
         console.log(" Host:", address + ", Port:", udpPort.options.localPort);
     });
-    console.log("To see your current scoreviz session, go to http://localhost:8081 in your web browser.");
+    console.log("To see your current scoreviz session, go to http://localhost:8082 in your web browser.");
 });
 
 udpPort.open();
@@ -40,7 +40,7 @@ udpPort.open();
 // Create an Express-based Web Socket server to which OSC messages will be relayed.
 var appResources = __dirname + "/web",
     app = express(),
-    server = app.listen(8081),
+    server = app.listen(8082),
     wss = new WebSocket.Server({
         server: server
     });
