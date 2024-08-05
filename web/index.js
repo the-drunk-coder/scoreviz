@@ -139,7 +139,7 @@ function render() {
 }
 
 var oscPort = new osc.WebSocketPort({
-    url: "ws://localhost:8081", // URL to your Web Socket server.
+    url: "ws://localhost:8082", // URL to your Web Socket server.
     metadata: true
 });
 
