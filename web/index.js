@@ -110,7 +110,7 @@ function render() {
 	    svg.appendChild(label);	   
 	}
 	
-	const stave_measure_0 = new VF.Stave(10, 0, 280);
+	const stave_measure_0 = new VF.Stave(stave_props.x, stave_props.y, 280);
 	stave_measure_0
 	    .addClef("treble")
 	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.upper)	    
@@ -153,11 +153,21 @@ function render() {
 	let width = stave_measure_0.width + stave_measure_0.x;
 	
 	for (const [n, notes_measure] of Object.entries(measures)) {
-	    const stave_measure = new VF.Stave(width, 0, 240);	   
+	    const stave_measure = new VF.Stave(width, stave_props.y, 240);	   
 	    stave_measure.setContext(context).draw();	    	    
 	    VF.Formatter.FormatAndDraw(context, stave_measure, notes_measure);
 	    width += stave_measure.width;
 	}	
+    }
+
+     // render textfields
+    for (const [name, textfield_props] of Object.entries(textfields)) {
+	var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+	text.setAttributeNS(null, 'x', textfield_props.x);
+	text.setAttributeNS(null, 'y', textfield_props.y);
+	text.setAttributeNS(null, 'fill', '#000');
+	text.textContent = textfield_props.content;
+	svg.appendChild(text);
     }
 }
 
