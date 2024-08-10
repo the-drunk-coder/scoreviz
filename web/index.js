@@ -70,6 +70,7 @@ function render() {
     renderer.resize(1200, 1200);
     
     const context = renderer.getContext();
+    context.setFont("mononoki", 10, "");
 
     // get svg for stuff like background color ...
     let svg = document.getElementsByTagName('svg')[0];
@@ -85,7 +86,7 @@ function render() {
 
 	// estimate width
 	let rect_width = stave_props.x + (measures.length * 240) + 80;
-		
+	
 	// stave background color
 	if (stave_props.bgcolor) {
 	    var svgns = "http://www.w3.org/2000/svg";
@@ -115,14 +116,42 @@ function render() {
 	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.upper)	    
 	    .setContext(context)
 	    .draw();
+
+	var stave_name = new VF.TextNote({
+            text: name,
+            font: {
+		family: "Mononoki",
+		size: 12,
+		weight: "bold"
+            },
+            duration: 'w'               
+	})
+	    .setLine(2)
+	    .setStave(stave_measure_0)
+	    .setJustification(VF.TextNote.Justification.LEFT);
+	
+	var dyn = new VF.TextNote({
+            glyph: stave_props.dyn,
+            font: {
+		family: "Mononoki",
+		size: 12,
+		weight: "bold"
+            },
+            duration: 'w'               
+	})
+	    .setLine(2)
+	    .setStave(stave_measure_0)
+	    .setJustification(VF.TextNote.Justification.LEFT);
+	
 	
 	let notes_measure_0 = measures.shift();
-		
+	
 	// Helper function to justify and draw a 4/4 voice
 	VF.Formatter.FormatAndDraw(context, stave_measure_0, notes_measure_0);
-
+	VF.Formatter.FormatAndDraw(context, stave_measure_0, [dyn, stave_name]);
+	
 	let width = stave_measure_0.width + stave_measure_0.x;
-		
+	
 	for (const [n, notes_measure] of Object.entries(measures)) {
 	    const stave_measure = new VF.Stave(width, 0, 240);	   
 	    stave_measure.setContext(context).draw();	    	    
@@ -183,7 +212,7 @@ oscPort.on("message", function (msg) {
 	staves[stave].bgcolor = col;
 
 	render();
-		
+	
 	break;
     }
     case "/voice/label": {
@@ -265,7 +294,7 @@ oscPort.on("message", function (msg) {
 	    staves[stave].timesignature.upper = 4;
 	    staves[stave].timesignature.lower = 4;
 	}
-     
+	
 	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
 	
 	//if (staves[stave].notes.length > 3) {
@@ -278,7 +307,7 @@ oscPort.on("message", function (msg) {
 	    staves[stave].notes[1].setStyle({ fillStyle: "#FF0000", strokeStyle: "#FF0000" })
 	    staves[stave].notes[2].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
 	}
-			
+	
 	render();
 
 	break;
