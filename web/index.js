@@ -85,7 +85,7 @@ function render() {
 
 	// estimate width
 	let rect_width = stave_props.x + (measures.length * 240) + 80;
-
+		
 	// stave background color
 	if (stave_props.bgcolor) {
 	    var svgns = "http://www.w3.org/2000/svg";
@@ -97,11 +97,22 @@ function render() {
 	    rect.setAttributeNS(null, 'fill', '#' + stave_props.bgcolor);
 	    svg.appendChild(rect);
 	}
+
+	// stave label
+	if (stave_props.label) {
+	    var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+	    label.setAttributeNS(null, 'x', stave_props.x + rect_width - 30);
+	    label.setAttributeNS(null, 'y', stave_props.y + 70);
+	    label.setAttributeNS(null, 'fill', '#000');
+	    label.setAttributeNS(null, 'font-size', '30');
+	    label.textContent = stave_props.label;
+	    svg.appendChild(label);	   
+	}
 	
 	const stave_measure_0 = new VF.Stave(10, 0, 280);
 	stave_measure_0
 	    .addClef("treble")
-	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.upper)
+	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.upper)	    
 	    .setContext(context)
 	    .draw();
 	
@@ -111,17 +122,13 @@ function render() {
 	VF.Formatter.FormatAndDraw(context, stave_measure_0, notes_measure_0);
 
 	let width = stave_measure_0.width + stave_measure_0.x;
-
-	
-	
+		
 	for (const [n, notes_measure] of Object.entries(measures)) {
-	    const stave_measure = new VF.Stave(width, 0, 240);
-	    stave_measure.setContext(context).draw();
+	    const stave_measure = new VF.Stave(width, 0, 240);	   
+	    stave_measure.setContext(context).draw();	    	    
 	    VF.Formatter.FormatAndDraw(context, stave_measure, notes_measure);
 	    width += stave_measure.width;
-	}
-
-	
+	}	
     }
 }
 
