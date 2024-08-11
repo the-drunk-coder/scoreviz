@@ -238,6 +238,20 @@ oscPort.on("message", function (msg) {
 	render();
 	
 	break;
+    }
+    case "/voice/numnotes": {
+	var stave = msg.args[0].value;
+	var num_notes = msg.args[1].value;
+	
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	console.log(length);
+	staves[stave].num_notes = num_notes;
+
+	render();
+	
+	break;
     }	
     case "/voice/dyn": {
 	var stave = msg.args[0].value;
@@ -298,6 +312,10 @@ oscPort.on("message", function (msg) {
 	    staves[stave].markcurrent = Boolean(false);
 	}
 
+	if (staves[stave].num_notes === undefined) {
+	    staves[stave].num_notes = 8;
+	}
+
 	// default is 4/4
 	if (staves[stave].timesignature === undefined) {
 	    staves[stave].timesignature = {};
@@ -307,9 +325,9 @@ oscPort.on("message", function (msg) {
 	
 	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
 	
-	//if (staves[stave].notes.length > 3) {
-	//    staves[stave].notes.shift();
-	//}
+	if (staves[stave].notes.length > staves[stave].num_notes) {
+	    staves[stave].notes.shift();
+	}
 	
 	if (staves[stave].markcurrent) {
 	    // set the current note to a different color ...
