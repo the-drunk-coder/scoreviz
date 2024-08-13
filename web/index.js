@@ -1,6 +1,6 @@
 // get vexflow API
 //const VF = Vex.Flow;
-const { Formatter, Renderer, Stave, StaveNote, TextNote, Dot, Voice } = Vex.Flow;
+const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice } = Vex.Flow;
 
 var staves = {};
 var textfields = {};
@@ -152,32 +152,132 @@ function ticks_to_sym(ticks) {
 
 // convert list of notes to list of measures, to be able
 // to draw one stave per measure (vexflow requirement)
-// INCOMPLETE
+// (PROBABLY) INCOMPLETE
 function notes_to_measures(notes, lower, upper) {
     let inner_notes = notes.slice();
 
     let measures = [];
     let measure = [];
+    let ties = [];
 
     let ticks_to_fill_per_bar = upper * (16384 / lower);
 
     let num_notes = inner_notes.length;
-    
+
     for (var i = 0; i < num_notes; i++) {
 	
 	let note = inner_notes.shift();
-
-	if (note.intrinsicTicks <= ticks_to_fill_per_bar) {	    
+	
+	if (note.intrinsicTicks <= ticks_to_fill_per_bar) {
+	    // note fits into bar
 	    measure.push(note);
 	    ticks_to_fill_per_bar -= note.intrinsicTicks
 	} else {
-	    // reset current measure
-	    measures.push(measure);
-	    measure = [];
-	    ticks_to_fill_per_bar = upper * (16384 / lower);
-	    // add note 
-	    measure.push(note);
-	    ticks_to_fill_per_bar -= note.intrinsicTicks
+	    // note doesn't fit into bar
+	    
+	    // bar is not full yet, note needs to be
+	    // split and tied ...
+	    if (ticks_to_fill_per_bar > 0) {
+
+		// length of each note in ticks
+		let len_a = ticks_to_fill_per_bar;
+		let len_b = note.intrinsicTicks - ticks_to_fill_per_bar;
+
+		// calculate the symbols
+		let sym_a = ticks_to_sym(len_a);
+		let sym_b = ticks_to_sym(len_b);
+
+		// calculate the split & tied notes
+		let tied_notes = []; 
+
+		// ticks_to_sym might return multiple notes, even
+		// though it's very unlikely (but might change in the future)
+		for (const [num, rest] of Object.entries(sym_a)) {
+		    
+		    var sym_a_note;
+
+		    if (rest[1] >>> 0) { // dotted note
+			let ds = "";
+			for (var d = 0; d < rest[1]; d++){
+			    ds += "d";
+			}			
+			sym_a_note = new StaveNote({ keys: note.keys, duration: rest[0] + ds});
+			for (var d = 0; d < rest[1]; d++) {
+			    dotted(sym_a_note);
+			}	    		
+		    } else { // plain note
+			sym_a_note = new StaveNote({ keys: note.keys, duration: rest[0]});	    
+		    }
+
+		    tied_notes.push(sym_a_note);		    		    		    
+		}
+
+		// keep for later
+		let sym_a_notes = tied_notes.length;
+
+		// ticks_to_sym might return multiple notes, even
+		// though it's very unlikely (but might change in the future)
+		for (const [num, rest] of Object.entries(sym_b)) {
+		    
+		    var sym_b_note;
+
+		    if (rest[1] >>> 0) { // dotted notes, we have to draw dots
+			let ds = "";
+			for (var d = 0; d < rest[1]; d++){
+			    ds += "d";
+			}
+
+			sym_b_note = new StaveNote({ keys: note.keys, duration: rest[0] + ds});
+
+			// add dot to note 
+			for (var d = 0; d < rest[1]; d++) {
+			    dotted(sym_b_note);
+			}	    	
+		    } else {
+			sym_b_note = new StaveNote({ keys: note.keys, duration: rest[0] });	    
+		    }
+
+		    tied_notes.push(sym_b_note);		   
+		}
+
+		// create ties, to be drawn later
+		for (var j = 0; j < tied_notes.length - 1; j++) {
+		    ties.push(new StaveTie({
+			first_note: tied_notes[j],
+			last_note: tied_notes[j+1],
+			first_indices: [0],
+			last_indices: [0],
+		    }));		    
+		}
+
+		// add what's split off and remains in first measure
+		for (var j = 0; j < sym_a_notes; j++) {
+		    measure.push(tied_notes[j]);
+		}
+
+		// push full measure
+		measures.push(measure);
+
+		// start new measure
+		measure = [];
+
+		// add what's split off and starts the second measure
+		for (var j = sym_a_notes; j < tied_notes.length; j++) {
+		    measure.push(tied_notes[j]);
+		}
+
+		// calc what's left to fill
+		ticks_to_fill_per_bar = upper * (16384 / lower) - len_b;
+		
+	    } else {
+		// bar is full, start new bar 
+		measures.push(measure);
+		measure = [];
+		ticks_to_fill_per_bar = upper * (16384 / lower);
+		// add note 
+		measure.push(note);
+		ticks_to_fill_per_bar -= note.intrinsicTicks
+	    }	   	    	    
 	}
     }
 
@@ -188,21 +288,19 @@ function notes_to_measures(notes, lower, upper) {
 	for (const [num, rest] of Object.entries(rests)) {
 	    
 	    var rest_note;
-	    if (rest[1] >>> 0) {
+	    if (rest[1] >>> 0) { // dotted
 
 		let ds = "";
-
 		for (var d = 0; d < rest[1]; d++){
 		    ds += "d";
 		}
-
 		rest_note = new StaveNote({ keys: ["b/4"], duration: rest[0] + ds + "r"});
 
 		for (var d = 0; d < rest[1]; d++) {
 		    dotted(rest_note);
 		}
 	    	
-	    } else {
+	    } else { // plain
 		rest_note = new StaveNote({ keys: ["b/4"], duration: rest[0] + "r"});	    
 	    }
 
@@ -213,7 +311,7 @@ function notes_to_measures(notes, lower, upper) {
     // last measure
     measures.push(measure);
     
-    return measures;
+    return [measures, ties];
 }
 
 var div = document.getElementById("boo");
@@ -235,7 +333,7 @@ function render() {
     // render staves 
     for (const [name, stave_props] of Object.entries(staves)) {
 
-	let measures = notes_to_measures(
+	let [measures, ties] = notes_to_measures(
 	    stave_props.notes,
 	    stave_props.timesignature.upper,
 	    stave_props.timesignature.lower
@@ -314,7 +412,12 @@ function render() {
 	    stave_measure.setContext(context).draw();	    	    
 	    Formatter.FormatAndDraw(context, stave_measure, notes_measure);
 	    width += stave_measure.width;
-	}	
+	}
+
+	// draw ties
+	ties.forEach((t) => {
+	    t.setContext(context).draw();
+	});
     }
 
     // render textfields
