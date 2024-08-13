@@ -1,5 +1,6 @@
 // get vexflow API
-const VF = Vex.Flow;
+//const VF = Vex.Flow;
+const { Formatter, Renderer, Stave, StaveNote, TextNote, Dot, Voice } = Vex.Flow;
 
 var staves = {};
 var textfields = {};
@@ -21,6 +22,137 @@ var textfields = {};
 // - [x] clef for stave
 // - [x] color "active" note
 
+function dotted(staveNote, noteIndex = -1) {
+    if (noteIndex < 0) {
+	Dot.buildAndAttach([staveNote], {
+	    all: true
+	});
+    } else {
+	Dot.buildAndAttach([staveNote], {
+	    index: noteIndex
+	});
+    }
+    return staveNote;
+}
+
+// straight
+let T_1 = 16384;
+let T_2 = T_1 / 2;
+let T_4 = T_2 / 2;
+let T_8 = T_4 / 2;
+let T_16 = T_8 / 2;
+let T_32 = T_16 / 2;
+let T_64 = T_32 / 2;
+let T_128 = T_64 / 2;
+
+// dotted
+let T_D_2 = T_2 + T_4;
+let T_D_4 = T_4 + T_8;
+let T_D_8 = T_8 + T_16;
+let T_D_16 = T_16 + T_32;
+let T_D_32 = T_32 + T_64;
+let T_D_64 = T_64 + T_128;
+
+// double_dotted
+let T_DD_2 = T_2 + T_4 + T_8;
+let T_DD_4 = T_4 + T_8 + T_16;
+let T_DD_8 = T_8 + T_16 + T_32;
+let T_DD_16 = T_16 + T_32 + T_64;
+let T_DD_32 = T_32 + T_64 + T_128;
+
+// triple_dotted
+let T_DDD_2 = T_2 + T_4 + T_8 + T_16;
+let T_DDD_4 = T_4 + T_8 + T_16 + T_32;
+let T_DDD_8 = T_8 + T_16 + T_32 + T_64;
+let T_DDD_16 = T_16 + T_32 + T_64 + T_128;
+
+// brute-force 
+// assume for notes < T_1
+function ticks_to_sym(ticks) {
+    let syms = [];
+    while (ticks > 0) {
+	// smallest possible note, currently 
+	if (ticks < T_128) {
+	    return syms;
+	}
+
+	if (ticks == T_1) {
+	    return [["w", 0]];
+	} else if (ticks >= T_DDD_2) { // half
+	    syms.push(["h", 3]);
+	    ticks -= T_DDD_2;
+	} else if (ticks >= T_DD_2) {
+	    syms.push(["h", 2]);
+	    ticks -= T_DD_2;
+	} else if (ticks >= T_D_2) {
+	    syms.push(["h", 1]);
+	    ticks -= T_D_2;
+	} else if (ticks >= T_2) {
+	    syms.push(["h", 0]);
+	    ticks -= T_2;
+	} else if (ticks >= T_DDD_4) { // quarter
+	    syms.push(["4", 3]);
+	    ticks -= T_DDD_4;
+	} else if (ticks >= T_DD_4) {
+	    syms.push(["4", 2]);
+	    ticks -= T_DD_4;
+	} else if (ticks >= T_D_4) {
+	    syms.push(["4", 1]);
+	    ticks -= T_D_4;
+	} else if (ticks >= T_4) {
+	    syms.push(["4", 0]);
+	    ticks -= T_4;
+	} else if (ticks >= T_DDD_8) { // eighth
+	    syms.push(["8", 3]);
+	    ticks -= T_DDD_8;
+	} else if (ticks >= T_DD_8) {
+	    syms.push(["8", 2]);
+	    ticks -= T_DD_8;
+	} else if (ticks >= T_D_8) {
+	    syms.push(["8", 1]);
+	    ticks -= T_D_8;
+	} else if (ticks >= T_8) {
+	    syms.push(["8", 0]);
+	    ticks -= T_8;
+	} else if (ticks >= T_DDD_16) { // sixteenth
+	    syms.push(["16", 3]);
+	    ticks -= T_DDD_16;
+	} else if (ticks >= T_DD_16) {
+	    syms.push(["16", 2]);
+	    ticks -= T_DD_16;
+	} else if (ticks >= T_D_16) {
+	    syms.push(["16", 1]);
+	    ticks -= T_D_16;
+	} else if (ticks >= T_16) {
+	    syms.push(["16", 0]);
+	    ticks -= T_16;
+	}  else if (ticks >= T_DD_32) { // thirtysecond
+	    syms.push(["32", 2]);
+	    ticks -= T_DD_32;
+	} else if (ticks >= T_D_32) {
+	    syms.push(["32", 1]);
+	    ticks -= T_D_32;
+	} else if (ticks >= T_32) {
+	    syms.push(["32", 0]);
+	    ticks -= T_32;
+	} else if (ticks >= T_D_64) { // sixtyfourth
+	    syms.push(["64", 1]);
+	    ticks -= T_D_64;
+	} else if (ticks >= T_64) {
+	    syms.push(["64", 0]);
+	    ticks -= T_64;
+	} else if (ticks >= T_128) { // 128
+	    syms.push(["128", 0]);
+	    ticks -= T_128;
+	}
+	
+    }
+    return syms;
+}
+
+// convert list of notes to list of measures, to be able
+// to draw one stave per measure (vexflow requirement)
+// INCOMPLETE
 function notes_to_measures(notes, lower, upper) {
     let inner_notes = notes.slice();
 
@@ -48,9 +180,35 @@ function notes_to_measures(notes, lower, upper) {
 	    ticks_to_fill_per_bar -= note.intrinsicTicks
 	}
     }
-    
+
+    // fill bar with rest
     if (ticks_to_fill_per_bar > 0) {
-	// add rests ...
+	let rests = ticks_to_sym(ticks_to_fill_per_bar);
+
+	for (const [num, rest] of Object.entries(rests)) {
+	    
+	    var rest_note;
+	    if (rest[1] >>> 0) {
+
+		let ds = "";
+
+		for (var d = 0; d < rest[1]; d++){
+		    ds += "d";
+		}
+
+		rest_note = new StaveNote({ keys: ["b/4"], duration: rest[0] + ds + "r"});
+
+		for (var d = 0; d < rest[1]; d++) {
+		    dotted(rest_note);
+		}
+	    	
+	    } else {
+		console.log(rest);
+		rest_note = new StaveNote({ keys: ["b/4"], duration: rest[0] + "r"});	    
+	    }
+
+	    measure.push(rest_note);
+	}
     }
 
     // last measure
@@ -66,8 +224,8 @@ function render() {
     // clear score first ... this is not very efficient I suppose, 
     div.innerHTML = '';
 
-    const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-    renderer.resize(1200, 1200);
+    const renderer = new Renderer(div, Renderer.Backends.SVG);
+    renderer.resize(1920, 1080);
     
     const context = renderer.getContext();
     context.setFont("mononoki", 10, "");
@@ -110,14 +268,14 @@ function render() {
 	    svg.appendChild(label);	   
 	}
 	
-	const stave_measure_0 = new VF.Stave(stave_props.x, stave_props.y, 280);
+	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
 	stave_measure_0
 	    .addClef("treble")
 	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.upper)	    
 	    .setContext(context)
 	    .draw();
 
-	var stave_name = new VF.TextNote({
+	var stave_name = new TextNote({
             text: name,
             font: {
 		family: "Mononoki",
@@ -128,9 +286,9 @@ function render() {
 	})
 	    .setLine(2)
 	    .setStave(stave_measure_0)
-	    .setJustification(VF.TextNote.Justification.LEFT);
+	    .setJustification(TextNote.Justification.LEFT);
 	
-	var dyn = new VF.TextNote({
+	var dyn = new TextNote({
             glyph: stave_props.dyn,
             font: {
 		family: "Mononoki",
@@ -141,26 +299,26 @@ function render() {
 	})
 	    .setLine(2)
 	    .setStave(stave_measure_0)
-	    .setJustification(VF.TextNote.Justification.LEFT);
+	    .setJustification(TextNote.Justification.LEFT);
 	
 	
 	let notes_measure_0 = measures.shift();
 	
 	// Helper function to justify and draw a 4/4 voice
-	VF.Formatter.FormatAndDraw(context, stave_measure_0, notes_measure_0);
-	VF.Formatter.FormatAndDraw(context, stave_measure_0, [dyn, stave_name]);
+	Formatter.FormatAndDraw(context, stave_measure_0, notes_measure_0);
+	Formatter.FormatAndDraw(context, stave_measure_0, [dyn, stave_name]);
 	
 	let width = stave_measure_0.width + stave_measure_0.x;
 	
 	for (const [n, notes_measure] of Object.entries(measures)) {
-	    const stave_measure = new VF.Stave(width, stave_props.y, 240);	   
+	    const stave_measure = new Stave(width, stave_props.y, 240);	   
 	    stave_measure.setContext(context).draw();	    	    
-	    VF.Formatter.FormatAndDraw(context, stave_measure, notes_measure);
+	    Formatter.FormatAndDraw(context, stave_measure, notes_measure);
 	    width += stave_measure.width;
 	}	
     }
 
-     // render textfields
+    // render textfields
     for (const [name, textfield_props] of Object.entries(textfields)) {
 	var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 	text.setAttributeNS(null, 'x', textfield_props.x);
@@ -323,7 +481,7 @@ oscPort.on("message", function (msg) {
 	    staves[stave].timesignature.lower = 4;
 	}
 	
-	staves[stave].notes.push(new VF.StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
+	staves[stave].notes.push(new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
 	
 	if (staves[stave].notes.length > staves[stave].num_notes) {
 	    staves[stave].notes.shift();
