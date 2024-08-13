@@ -203,7 +203,6 @@ function notes_to_measures(notes, lower, upper) {
 		}
 	    	
 	    } else {
-		console.log(rest);
 		rest_note = new StaveNote({ keys: ["b/4"], duration: rest[0] + "r"});	    
 	    }
 
