@@ -1,6 +1,6 @@
 // get vexflow API
 //const VF = Vex.Flow;
-const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice } = Vex.Flow;
+const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, Accidental } = Vex.Flow;
 
 var staves = {};
 var textfields = {};
@@ -582,8 +582,23 @@ oscPort.on("message", function (msg) {
 	    staves[stave].timesignature.upper = 4;
 	    staves[stave].timesignature.lower = 4;
 	}
+
+	let new_note = new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef });
+
+	// Accidentals
+	if (note.substring(1).includes("##")) {
+	    new_note.addModifier(new Accidental("##"))
+	} else if (note.substring(1).includes("#")) {
+	    new_note.addModifier(new Accidental("#"))
+	}
+
+	if (note.substring(1).includes("bb")) {
+	    new_note.addModifier(new Accidental("bb"))
+	} else if (note.substring(1).includes("b")) {
+	    new_note.addModifier(new Accidental("b"))
+	}
 	
-	staves[stave].notes.push(new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef }));
+	staves[stave].notes.push(new_note);
 	
 	if (staves[stave].notes.length > staves[stave].num_notes) {
 	    staves[stave].notes.shift();
