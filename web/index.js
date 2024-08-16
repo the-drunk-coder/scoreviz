@@ -340,7 +340,7 @@ function render() {
 	);
 
 	// estimate width
-	let rect_width = stave_props.x + (measures.length * 240) + 80;
+	let rect_width = (measures.length * 240) + 110;
 	
 	// stave background color
 	if (stave_props.bgcolor) {
@@ -357,7 +357,7 @@ function render() {
 	// stave label
 	if (stave_props.label) {
 	    var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-	    label.setAttributeNS(null, 'x', stave_props.x + rect_width - 30);
+	    label.setAttributeNS(null, 'x', stave_props.x + rect_width - 60);
 	    label.setAttributeNS(null, 'y', stave_props.y + 70);
 	    label.setAttributeNS(null, 'fill', '#000');
 	    label.setAttributeNS(null, 'font-size', '30');
