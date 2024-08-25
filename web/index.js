@@ -314,6 +314,47 @@ function notes_to_measures(notes, lower, upper) {
     return [measures, ties];
 }
 
+function formatAndDraw(
+    ctx,
+    stave,
+    notes,
+    params,
+) {
+
+    let options = {
+	auto_beam: false,
+	align_rests: false,
+    };
+
+    if (typeof params === 'object') {
+	options = { ...options, ...params };
+    } else if (typeof params === 'boolean') {
+	options.auto_beam = params;
+    }
+
+    // Start by creating a voice and adding all the notes to it.
+    const voice = new Voice({
+	num_beats: 4,
+	beat_value: 4,
+	resolution: 16384,
+    }).setMode(Voice.Mode.SOFT).addTickables(notes);
+
+    // Then create beams, if requested.
+    const beams = options.auto_beam ? Beam.applyAndGetBeams(voice) : [];
+
+    // Instantiate a `Formatter` and format the notes.
+    new Formatter()
+	.joinVoices([voice]) // , { align_rests: options.align_rests })
+	.formatToStave([voice], stave, { align_rests: options.align_rests, stave });
+
+    // Render the voice and beams to the stave.
+    voice.setStave(stave).draw(ctx, stave);
+    beams.forEach((beam) => beam.setContext(ctx).draw());
+
+    // Return the bounding box of the voice.
+    return voice.getBoundingBox();
+}
+
 var div = document.getElementById("boo");
 
 function render() {
@@ -402,15 +443,15 @@ function render() {
 	let notes_measure_0 = measures.shift();
 	
 	// Helper function to justify and draw a 4/4 voice
-	Formatter.FormatAndDraw(context, stave_measure_0, notes_measure_0);
-	Formatter.FormatAndDraw(context, stave_measure_0, [dyn, stave_name]);
+	formatAndDraw(context, stave_measure_0, notes_measure_0);
+	formatAndDraw(context, stave_measure_0, [dyn, stave_name]);
 	
 	let width = stave_measure_0.width + stave_measure_0.x;
 	
 	for (const [n, notes_measure] of Object.entries(measures)) {
 	    const stave_measure = new Stave(width, stave_props.y, 240);	   
 	    stave_measure.setContext(context).draw();	    	    
-	    Formatter.FormatAndDraw(context, stave_measure, notes_measure);
+	    formatAndDraw(context, stave_measure, notes_measure);
 	    width += stave_measure.width;
 	}
 
