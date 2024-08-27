@@ -161,6 +161,7 @@ function notes_to_measures(notes, upper, lower, pad) {
     let ties = [];
 
     let ticks_to_fill_per_bar = upper * (16384 / lower);
+    let full_bar = upper * (16384 / lower);
 
     let num_notes = inner_notes.length;
 
@@ -315,21 +316,21 @@ function notes_to_measures(notes, upper, lower, pad) {
 
     if (pad === false && ticks_to_fill_per_bar > 0) {
 	if (ticks_to_fill_per_bar % T_1 === 0) {
-	    last_signature = [ticks_to_fill_per_bar / T_1, 1];
+	    last_signature = [full_bar / T_1 - ticks_to_fill_per_bar / T_1, 1];
 	} else if (ticks_to_fill_per_bar % T_2 === 0) {
-	    last_signature = [2 - ticks_to_fill_per_bar / T_2, 2];
+	    last_signature = [full_bar / T_2 - ticks_to_fill_per_bar / T_2, 2];
 	} else if (ticks_to_fill_per_bar % T_4 === 0) {
-	    last_signature = [4 - ticks_to_fill_per_bar / T_4, 4];
+	    last_signature = [full_bar / T_4 - ticks_to_fill_per_bar / T_4, 4];
 	} else if (ticks_to_fill_per_bar % T_8 === 0) {
-	    last_signature = [8 - ticks_to_fill_per_bar / T_8, 8];
+	    last_signature = [full_bar / T_8 - ticks_to_fill_per_bar / T_8, 8];
 	} else if (ticks_to_fill_per_bar % T_16 === 0) {
-	    last_signature = [16 - ticks_to_fill_per_bar / T_16, 16];
+	    last_signature = [full_bar / T_16 - ticks_to_fill_per_bar / T_16, 16];
 	} else if (ticks_to_fill_per_bar % T_32 === 0) {
-	    last_signature = [32 - ticks_to_fill_per_bar / T_32, 32];
+	    last_signature = [full_bar / T_32 - ticks_to_fill_per_bar / T_32, 32];
 	} else if (ticks_to_fill_per_bar % T_64 === 0) {
-	    last_signature = [64 - ticks_to_fill_per_bar / T_64, 64];
+	    last_signature = [full_bar / T_64 - ticks_to_fill_per_bar / T_64, 64];
 	} else if (ticks_to_fill_per_bar % T_128 === 0) {
-	    last_signature = [128 - ticks_to_fill_per_bar / T_128, 128];
+	    last_signature = [full_bar / T_128 - ticks_to_fill_per_bar / T_128, 128];
 	}
     }
              
