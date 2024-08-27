@@ -9,9 +9,9 @@ var textfields = {};
 
 // - score name
 // - group staves, 
-// - cute additions (emojis for playing style ?)
 // - "snippet mode" bs "rt mode (change always, mark current)"
 
+// - [x] cute additions (emojis for playing style ?) (text labels can be cute)
 // - [x] text snippets in random positions
 // - [x] transpose notes according to clef (vexflow does it after all)
 // - [x] put a color background
@@ -153,7 +153,7 @@ function ticks_to_sym(ticks) {
 // convert list of notes to list of measures, to be able
 // to draw one stave per measure (vexflow requirement)
 // (PROBABLY) INCOMPLETE
-function notes_to_measures(notes, lower, upper) {
+function notes_to_measures(notes, upper, lower, pad) {
     let inner_notes = notes.slice();
 
     let measures = [];
@@ -282,7 +282,7 @@ function notes_to_measures(notes, lower, upper) {
     }
 
     // fill bar with rest
-    if (ticks_to_fill_per_bar > 0) {
+    if (pad === true && ticks_to_fill_per_bar > 0) {
 	let rests = ticks_to_sym(ticks_to_fill_per_bar);
 
 	for (const [num, rest] of Object.entries(rests)) {
@@ -310,8 +310,30 @@ function notes_to_measures(notes, lower, upper) {
 
     // last measure
     measures.push(measure);
-    
-    return [measures, ties];
+
+    let last_signature = [upper, lower];
+
+    if (pad === false && ticks_to_fill_per_bar > 0) {
+	if (ticks_to_fill_per_bar % T_1 === 0) {
+	    last_signature = [ticks_to_fill_per_bar / T_1, 1];
+	} else if (ticks_to_fill_per_bar % T_2 === 0) {
+	    last_signature = [2 - ticks_to_fill_per_bar / T_2, 2];
+	} else if (ticks_to_fill_per_bar % T_4 === 0) {
+	    last_signature = [4 - ticks_to_fill_per_bar / T_4, 4];
+	} else if (ticks_to_fill_per_bar % T_8 === 0) {
+	    last_signature = [8 - ticks_to_fill_per_bar / T_8, 8];
+	} else if (ticks_to_fill_per_bar % T_16 === 0) {
+	    last_signature = [16 - ticks_to_fill_per_bar / T_16, 16];
+	} else if (ticks_to_fill_per_bar % T_32 === 0) {
+	    last_signature = [32 - ticks_to_fill_per_bar / T_32, 32];
+	} else if (ticks_to_fill_per_bar % T_64 === 0) {
+	    last_signature = [64 - ticks_to_fill_per_bar / T_64, 64];
+	} else if (ticks_to_fill_per_bar % T_128 === 0) {
+	    last_signature = [128 - ticks_to_fill_per_bar / T_128, 128];
+	}
+    }
+             
+    return [measures, ties, last_signature];
 }
 
 function formatAndDraw(
@@ -332,10 +354,17 @@ function formatAndDraw(
 	options.auto_beam = params;
     }
 
+    var num_beats = 4;
+    var beat_value = 4;
+    
+    if (params.signature !== undefined) {
+	num_beats = params.signature[0];
+	beat_value = params.signature[1];	
+    }
     // Start by creating a voice and adding all the notes to it.
     const voice = new Voice({
-	num_beats: 4,
-	beat_value: 4,
+	num_beats: num_beats,
+	beat_value: beat_value,
 	resolution: 16384,
     }).setMode(Voice.Mode.SOFT).addTickables(notes);
 
@@ -344,7 +373,7 @@ function formatAndDraw(
 
     // Instantiate a `Formatter` and format the notes.
     new Formatter()
-	.joinVoices([voice]) // , { align_rests: options.align_rests })
+	.joinVoices([voice]) 
 	.formatToStave([voice], stave, { align_rests: options.align_rests, stave });
 
     // Render the voice and beams to the stave.
@@ -373,13 +402,14 @@ function render() {
     
     // render staves 
     for (const [name, stave_props] of Object.entries(staves)) {
-
-	let [measures, ties] = notes_to_measures(
+		
+	let [measures, ties, last_signature] = notes_to_measures(
 	    stave_props.notes,
 	    stave_props.timesignature.upper,
-	    stave_props.timesignature.lower
+	    stave_props.timesignature.lower,
+	    stave_props.pad
 	);
-
+	
 	// estimate width
 	let rect_width = (measures.length * 240) + 110;
 	
@@ -409,7 +439,7 @@ function render() {
 	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
 	stave_measure_0
 	    .addClef("treble")
-	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.upper)	    
+	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.lower)	    
 	    .setContext(context)
 	    .draw();
 
@@ -439,20 +469,45 @@ function render() {
 	    .setStave(stave_measure_0)
 	    .setJustification(TextNote.Justification.LEFT);
 	
-	
+	// first bar
 	let notes_measure_0 = measures.shift();
-	
+
+	// last bar
+	var notes_measure_last = undefined;	
+	if (measures.length > 0) {
+	    notes_measure_last = measures.pop();
+	}
+
+	let signature = [
+	    stave_props.timesignature.upper,
+	    stave_props.timesignature.lower
+	];
+		
 	// Helper function to justify and draw a 4/4 voice
-	formatAndDraw(context, stave_measure_0, notes_measure_0);
-	formatAndDraw(context, stave_measure_0, [dyn, stave_name]);
+	formatAndDraw(context, stave_measure_0, notes_measure_0, { signature: signature });
+	formatAndDraw(context, stave_measure_0, [dyn, stave_name], { signature: signature });
 	
 	let width = stave_measure_0.width + stave_measure_0.x;
 	
 	for (const [n, notes_measure] of Object.entries(measures)) {
 	    const stave_measure = new Stave(width, stave_props.y, 240);	   
 	    stave_measure.setContext(context).draw();	    	    
-	    formatAndDraw(context, stave_measure, notes_measure);
+	    formatAndDraw(context, stave_measure, notes_measure, { signature: signature });
 	    width += stave_measure.width;
+	}	
+
+	if (notes_measure_last !== undefined) {
+	    const stave_measure = new Stave(width, stave_props.y, 240);	   
+	    if (last_signature[0] === signature[0] && last_signature[1] === signature[1]) {
+		stave_measure		
+		    .setContext(context).draw();	    	    
+	    } else {
+		stave_measure
+		    .addTimeSignature(last_signature[0] + "/" + last_signature[1])	    
+		    .setContext(context).draw();	    	    
+	    }
+	    	    	    
+	    formatAndDraw(context, stave_measure, notes_measure_last, { signature: last_signature });
 	}
 
 	// draw ties
@@ -493,6 +548,21 @@ oscPort.on("message", function (msg) {
 	}
 
 	staves[stave].markcurrent = Boolean(mark === 'true');
+	
+	break;
+    }
+    case "/voice/pad": {
+	// whether the voice should be padded to a full bar
+	var stave = msg.args[0].value;
+	var pad = msg.args[1].value;
+	
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
+	staves[stave].pad = Boolean(pad === 'true');
+
+	console.log("PAD " + staves[stave].pad);
 	
 	break;
     }	
@@ -547,7 +617,7 @@ oscPort.on("message", function (msg) {
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
 	}
-	console.log(length);
+	
 	staves[stave].num_notes = num_notes;
 
 	render();
@@ -569,13 +639,31 @@ oscPort.on("message", function (msg) {
     case "/voice/clef": {
 	var stave = msg.args[0].value;
 	var clef = msg.args[1].value;
-
+	
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+			
+	staves[stave].clef = clef;
+	
+	break;
+    }
+    case "/voice/timesignature": {
+	var stave = msg.args[0].value;
+	var upper = msg.args[1].value;
+	var lower = msg.args[2].value;
+	
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
 	}
 	
-	staves[stave].clef = clef;
-
+	if (staves[stave].timesignature === undefined) {
+	    staves.timesignature = {};
+	}
+	
+	staves[stave].timesignature.upper = upper;
+	staves[stave].timesignature.lower = lower;
+	
 	break;
     }
     case "/voice/note/add": {
@@ -608,7 +696,7 @@ oscPort.on("message", function (msg) {
 	if (staves[stave].y === undefined) {
 	    staves[stave].y = 10 + 100 * (Object.keys(staves).length - 1);
 	}
-
+	
 	if (staves[stave].markcurrent === undefined) {
 	    staves[stave].markcurrent = Boolean(false);
 	}
@@ -622,6 +710,10 @@ oscPort.on("message", function (msg) {
 	    staves[stave].timesignature = {};
 	    staves[stave].timesignature.upper = 4;
 	    staves[stave].timesignature.lower = 4;
+	}
+
+	if (staves[stave].pad === undefined) {
+	    staves[stave].pad = false;
 	}
 
 	let new_note = new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef });
