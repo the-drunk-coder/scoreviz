@@ -4,6 +4,7 @@ const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, A
 
 var staves = {};
 var textfields = {};
+var images = {};
 
 // desired functions:
 
@@ -526,6 +527,18 @@ function render() {
 	text.textContent = textfield_props.content;
 	svg.appendChild(text);
     }
+
+    // images 
+    for (const [name, image_props] of Object.entries(images)) {
+	var svgimg = document.createElementNS('http://www.w3.org/2000/svg','image');
+	svgimg.setAttributeNS(null, 'height', image_props.height);
+	svgimg.setAttributeNS(null, 'width', image_props.width);
+	svgimg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', image_props.ref);
+	svgimg.setAttributeNS(null,'x', image_props.x);
+	svgimg.setAttributeNS(null,'y', image_props.y);
+	svgimg.setAttributeNS(null, 'visibility', 'visible');
+	svg.appendChild(svgimg);
+    }
 }
 
 var oscPort = new osc.WebSocketPort({
@@ -749,7 +762,7 @@ oscPort.on("message", function (msg) {
 
 	break;
     }
-    case "/textfield/content": {
+    case "/textfield/put": {
 	var textfield = msg.args[0].value;
 	var content = msg.args[1].value;
 	var x = msg.args[2].value;
@@ -763,6 +776,29 @@ oscPort.on("message", function (msg) {
 	textfields[textfield].y = y;	
 
 	textfields[textfield].content = content;
+	
+	render();
+	
+	break;
+    }
+
+    case "/image/put": {
+	var image = msg.args[0].value;
+	var ref = msg.args[1].value;
+	var x = msg.args[2].value;
+	var y = msg.args[3].value;
+
+	if (images[image] === undefined) {
+	    images[image] = {};
+	}
+	
+	images[image].x = x;		
+	images[image].y = y;
+
+	images[image].width = 200;		
+	images[image].height = 200;	
+	
+	images[image].ref = ref;
 	
 	render();
 	
