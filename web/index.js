@@ -440,7 +440,7 @@ function render() {
 	
 	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
 	stave_measure_0
-	    .addClef("treble")
+	    .addClef(stave_props.clef)
 	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.lower)	    
 	    .setContext(context)
 	    .draw();
@@ -659,7 +659,7 @@ oscPort.on("message", function (msg) {
 	}
 			
 	staves[stave].clef = clef;
-	
+
 	break;
     }
     case "/voice/timesignature": {
@@ -799,6 +799,7 @@ oscPort.on("message", function (msg) {
 	images[image].height = 200;	
 	
 	images[image].ref = ref;
+	console.log(ref)
 	
 	render();
 	
