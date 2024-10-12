@@ -1,6 +1,6 @@
 // get vexflow API
 //const VF = Vex.Flow;
-const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, Accidental } = Vex.Flow;
+const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, Accidental, TextDynamics, TextNoteStruct } = Vex.Flow;
 
 var staves = {};
 var textfields = {};
@@ -455,11 +455,10 @@ function render() {
             duration: 'w'               
 	})
 	    .setLine(2)
-	    .setStave(stave_measure_0)
-	    .setJustification(TextNote.Justification.LEFT);
+	    .setStave(stave_measure_0);
 	
-	var dyn = new TextNote({
-            glyph: stave_props.dyn,
+	var dyn = new TextDynamics({
+            text: stave_props.dyn,
             font: {
 		family: "Mononoki",
 		size: 12,
@@ -467,10 +466,8 @@ function render() {
             },
             duration: 'w'               
 	})
-	    .setLine(2)
-	    .setStave(stave_measure_0)
-	    .setJustification(TextNote.Justification.LEFT);
-	
+	    .setLine(2);
+	    	
 	// first bar
 	let notes_measure_0 = measures.shift();
 
@@ -648,18 +645,23 @@ oscPort.on("message", function (msg) {
 	
 	staves[stave].dyn = dyn;
 
+	render();
+	
 	break;
     }
     case "/voice/clef": {
 	var stave = msg.args[0].value;
 	var clef = msg.args[1].value;
-	
-	if (staves[stave] === undefined) {
+	console.log("" + stave + " " + clef)
+
+ 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
 	}
 			
 	staves[stave].clef = clef;
 
+	render();
+	
 	break;
     }
     case "/voice/timesignature": {
