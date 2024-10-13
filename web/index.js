@@ -520,6 +520,7 @@ function render() {
 	var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 	text.setAttributeNS(null, 'x', textfield_props.x);
 	text.setAttributeNS(null, 'y', textfield_props.y);
+	text.setAttributeNS(null, 'font-size', textfield_props.fontsize);
 	text.setAttributeNS(null, 'fill', '#000');
 	text.textContent = textfield_props.content;
 	svg.appendChild(text);
@@ -775,7 +776,9 @@ oscPort.on("message", function (msg) {
 	}
 	
 	textfields[textfield].x = x;		
-	textfields[textfield].y = y;	
+	textfields[textfield].y = y;
+
+	textfields[textfield].fontsize = 40;	
 
 	textfields[textfield].content = content;
 	
