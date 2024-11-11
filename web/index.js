@@ -1,6 +1,6 @@
 // get vexflow API
 //const VF = Vex.Flow;
-const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, Accidental, TextDynamics, TextNoteStruct } = Vex.Flow;
+const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, Accidental, Articulation, TextDynamics, TextNoteStruct } = Vex.Flow;
 
 var staves = {};
 var textfields = {};
@@ -687,6 +687,7 @@ oscPort.on("message", function (msg) {
 	var stave = msg.args[0].value;
 	var note = msg.args[1].value;
 	var dur = msg.args[2].value;
+	var art = msg.args[3].value;
 	
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
@@ -733,7 +734,32 @@ oscPort.on("message", function (msg) {
 	    staves[stave].pad = false;
 	}
 
-	let new_note = new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef });
+	let stem_direction = 1;
+	
+	let split_note = note.split("/");
+	let pitch_class = split_note[0];
+	let octave = parseInt(split_note[1]);
+
+	//console.log(pitch_class)
+	//console.log(octave)
+	//console.log("---")
+
+	if (staves[stave].clef === "treble") {	    
+	    if ((pitch_class.startsWith("b") && octave === 4) || octave > 4) {
+		stem_direction = -1;
+	    }
+	} else if (staves[stave].clef === "alto") {
+	    if (octave > 3) {
+		stem_direction = -1;
+	    }
+	} else if (staves[stave].clef === "bass") {
+	    if (pitch_class.startsWith("c") && octave > 3 ||
+		!pitch_class.startsWith("c") && octave > 2) {
+		stem_direction = -1;
+	    }
+	}
+	
+	let new_note = new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef, stem_direction: stem_direction });
 
 	// Accidentals
 	if (note.substring(1).includes("##")) {
@@ -747,7 +773,15 @@ oscPort.on("message", function (msg) {
 	} else if (note.substring(1).includes("b")) {
 	    new_note.addModifier(new Accidental("b"))
 	}
-	
+
+	if (art === "stacc" || art === "staccato") {
+	    new_note.addModifier(new Articulation("a."));
+	} else if (art === "ten" || art === "tenuto") {
+	    new_note.addModifier(new Articulation("a-"));
+	} else if (art === "marc" || art === "marcato") {
+	    new_note.addModifier(new Articulation("a>"));
+	}
+		
 	staves[stave].notes.push(new_note);
 	
 	if (staves[stave].notes.length > staves[stave].num_notes) {
