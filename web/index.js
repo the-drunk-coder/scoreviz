@@ -759,6 +759,17 @@ oscPort.on("message", function (msg) {
 	    }
 	}
 	
+	// correct rest position
+	if (dur.endsWith("r")) {
+	    if (staves[stave].clef === "treble") {
+		note = "b/4";
+	    } else if (staves[stave].clef === "alto") {
+		note = "c/4";
+	    } else if (staves[stave].clef === "bass") {
+		note = "d/3";
+	    } 
+	}
+	
 	let new_note = new StaveNote({ keys: [note], duration: dur, clef: staves[stave].clef, stem_direction: stem_direction });
 
 	// Accidentals
