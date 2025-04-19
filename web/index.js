@@ -1,18 +1,35 @@
 // get vexflow API
 //const VF = Vex.Flow;
-const { Formatter, Renderer, Stave, StaveNote, StaveTie, TextNote, Dot, Voice, Accidental, Articulation, TextDynamics, TextNoteStruct } = Vex.Flow;
+const {
+    Formatter, Renderer, Stave,
+    StaveNote, StaveTie, TextNote,
+    Dot, Voice, Accidental,
+    Annotation, Articulation, TextDynamics,
+    TextNoteStruct
+} = Vex.Flow;
 
 var staves = {};
 var textfields = {};
 var images = {};
 
-// desired functions:
+// next features to develop:
+
+// - preview notes, maybe like markcurrent, a different color ? different size "stichnote" would be great but also
+//   expensive space-wise ...
+// - colored textboxes
+
+// - percussion notation
+// - triplets, uneven durations ?
+// - how to integrate images better ?
 
 // - score name
 // - group staves, 
-// - "snippet mode" bs "rt mode (change always, mark current)"
+// - "snippet mode" bs "rt mode (change always, mark current)" - this might not be too effective ...
+// - repetition bar ends for easiear readability, maybe global? 
 
-// - [x] cute additions (emojis for playing style ?) (text labels can be cute)
+// - [x] lyrics ..
+// - [x] a visual metronome - this can already be done with timed textboxes from Mégra
+// - [x] cute additions (emojis for playing style ?) (text labels and images can be cute)
 // - [x] text snippets in random positions
 // - [x] transpose notes according to clef (vexflow does it after all)
 // - [x] put a color background
@@ -145,9 +162,9 @@ function ticks_to_sym(ticks) {
 	} else if (ticks >= T_128) { // 128
 	    syms.push(["128", 0]);
 	    ticks -= T_128;
-	}
-	
+	}	
     }
+    
     return syms;
 }
 
@@ -200,7 +217,7 @@ function notes_to_measures(notes, upper, lower, pad) {
 
 		    if (rest[1] >>> 0) { // dotted note
 			let ds = "";
-			for (var d = 0; d < rest[1]; d++){
+			for (var d = 0; d < rest[1]; d++) {
 			    ds += "d";
 			}			
 			sym_a_note = new StaveNote({ keys: note.keys, duration: rest[0] + ds});
@@ -401,10 +418,16 @@ function render() {
 
     // get svg for stuff like background color ...
     let svg = document.getElementsByTagName('svg')[0];
-    
+
     // render staves 
     for (const [name, stave_props] of Object.entries(staves)) {
-		
+
+	if (stave_props.notes === undefined ||
+	    stave_props.timesignature === undefined ||
+	    stave_props.pad === undefined) {
+	    continue;
+	}
+	
 	let [measures, ties, last_signature] = notes_to_measures(
 	    stave_props.notes,
 	    stave_props.timesignature.upper,
@@ -454,7 +477,7 @@ function render() {
             },
             duration: 'w'               
 	})
-	    .setLine(2)
+	    .setLine(0)
 	    .setStave(stave_measure_0);
 	
 	var dyn = new TextDynamics({
@@ -466,7 +489,7 @@ function render() {
             },
             duration: 'w'               
 	})
-	    .setLine(2);
+	    .setLine(0);
 	    	
 	// first bar
 	let notes_measure_0 = measures.shift();
@@ -521,6 +544,7 @@ function render() {
 	text.setAttributeNS(null, 'x', textfield_props.x);
 	text.setAttributeNS(null, 'y', textfield_props.y);
 	text.setAttributeNS(null, 'font-size', textfield_props.fontsize);
+	text.setAttributeNS(null, 'font-family', 'serif');
 	text.setAttributeNS(null, 'fill', '#000');
 	text.textContent = textfield_props.content;
 	svg.appendChild(text);
@@ -635,6 +659,20 @@ oscPort.on("message", function (msg) {
 	render();
 	
 	break;
+    }
+    case "/voice/previewnotes": {
+	var stave = msg.args[0].value;
+	var preview_notes = msg.args[1].value;
+	
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
+	staves[stave].preview_notes = preview_notes;
+
+	render();
+	
+	break;
     }	
     case "/voice/dyn": {
 	var stave = msg.args[0].value;
@@ -688,6 +726,10 @@ oscPort.on("message", function (msg) {
 	var note = msg.args[1].value;
 	var dur = msg.args[2].value;
 	var art = msg.args[3].value;
+	if (msg.args[4] !== undefined) {
+	    var text = msg.args[4].value;
+	}
+	
 	
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
@@ -721,6 +763,10 @@ oscPort.on("message", function (msg) {
 
 	if (staves[stave].num_notes === undefined) {
 	    staves[stave].num_notes = 8;
+	}
+
+	if (staves[stave].preview_notes === undefined) {
+	    staves[stave].preview_notes = 2;
 	}
 
 	// default is 4/4
@@ -792,11 +838,28 @@ oscPort.on("message", function (msg) {
 	} else if (art === "marc" || art === "marcato") {
 	    new_note.addModifier(new Articulation("a>"));
 	}
+
+	if (text !== undefined) {	    
+	    new_note.addModifier(new Annotation(text).setFont("mononoki", 12, "", "italic"));
+	} 
 		
 	staves[stave].notes.push(new_note);
+
+	let total_notes = staves[stave].num_notes + staves[stave].preview_notes;
 	
-	if (staves[stave].notes.length > staves[stave].num_notes) {
+	if (staves[stave].notes.length > total_notes) {
 	    staves[stave].notes.shift();
+	}
+
+	if (staves[stave].preview_notes !== 0) {
+	    for(var i = 0; i < total_notes; i++) {
+		if (i < staves[stave].preview_notes) {
+		    staves[stave].notes[total_notes - 1 - i].setStyle({ fillStyle: "#229911", strokeStyle: "#229911" })
+		    
+		} else {
+		    staves[stave].notes[total_notes - 1 - i].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
+		}
+	    }
 	}
 	
 	if (staves[stave].markcurrent) {
