@@ -545,8 +545,20 @@ function render() {
 	text.setAttributeNS(null, 'y', textfield_props.y);
 	text.setAttributeNS(null, 'font-size', textfield_props.fontsize);
 	text.setAttributeNS(null, 'font-family', 'serif');
-	text.setAttributeNS(null, 'fill', '#000');
+	text.setAttributeNS(null, 'fill', textfield_props.color);
 	text.textContent = textfield_props.content;
+
+	if (textfield_props.flash === true) {
+	    let anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+	    anim.setAttributeNS(null, 'attributeName', 'fill');
+	    //anim.setAttributeNS(null, 'repeatCount', '1');
+	    anim.setAttributeNS(null, 'values', textfield_props.color+";white");
+	    anim.setAttributeNS(null, 'dur', textfield_props.flashTime + "s");
+	    anim.setAttributeNS(null, 'fill', 'freeze');
+	    console.log(anim);
+	    text.appendChild(anim);
+	}
+	
 	svg.appendChild(text);
     }
 
@@ -878,6 +890,10 @@ oscPort.on("message", function (msg) {
 	var content = msg.args[1].value;
 	var x = msg.args[2].value;
 	var y = msg.args[3].value;
+	var fontSize = msg.args[4].value;
+	var col = msg.args[5].value;
+	var flash = Boolean(msg.args[6].value === 'true');
+	var flashTime = msg.args[7].value;
 
 	if (textfields[textfield] === undefined) {
 	    textfields[textfield] = {};
@@ -886,7 +902,12 @@ oscPort.on("message", function (msg) {
 	textfields[textfield].x = x;		
 	textfields[textfield].y = y;
 
-	textfields[textfield].fontsize = 40;	
+	textfields[textfield].color = "#" + col;
+	textfields[textfield].flash = flash;
+	textfields[textfield].flashTime = flashTime;
+	
+	
+	textfields[textfield].fontsize = fontSize;	
 
 	textfields[textfield].content = content;
 	
