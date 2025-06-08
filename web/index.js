@@ -606,6 +606,17 @@ oscPort.on("message", function (msg) {
     
     switch(msg.address) {
 
+    case "/clearall": {
+	// reset to initial state
+	staves = {};
+	textfields = {};
+	images = {};
+	global_preview = 0;
+	
+	render();
+	break;
+    }
+	
     case "/voice/repeatmarks": {
 	var stave = msg.args[0].value;
 	var barsToRepeat = msg.args[1].value;
