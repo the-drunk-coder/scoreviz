@@ -11,6 +11,7 @@ const {
 var staves = {};
 var textfields = {};
 var images = {};
+var global_preview = 0;
 
 // next features to develop:
 
@@ -460,14 +461,21 @@ function render() {
 	    label.textContent = stave_props.label;
 	    svg.appendChild(label);	   
 	}
+
+	// repeat marks? 
+	var beg_bar_type = 1;
+	if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
+	    beg_bar_type = 4; 
+	}
 	
 	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
+	stave_measure_0.setBegBarType(beg_bar_type);
 	stave_measure_0
 	    .addClef(stave_props.clef)
 	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.lower)	    
 	    .setContext(context)
 	    .draw();
-
+	
 	var stave_name = new TextNote({
             text: name,
             font: {
@@ -510,9 +518,18 @@ function render() {
 	formatAndDraw(context, stave_measure_0, [dyn, stave_name], { signature: signature });
 	
 	let width = stave_measure_0.width + stave_measure_0.x;
-	
+		
 	for (const [n, notes_measure] of Object.entries(measures)) {
 	    const stave_measure = new Stave(width, stave_props.y, 240);	   
+	    if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
+
+		// argh ...
+		if (stave_props.barsToRepeat - 2 == n) {
+		    // end repeat mark
+		    stave_measure.setEndBarType(5);
+		}
+	    }
+	    
 	    stave_measure.setContext(context).draw();	    	    
 	    formatAndDraw(context, stave_measure, notes_measure, { signature: signature });
 	    width += stave_measure.width;
@@ -565,8 +582,11 @@ function render() {
     // images 
     for (const [name, image_props] of Object.entries(images)) {
 	var svgimg = document.createElementNS('http://www.w3.org/2000/svg','image');
-	svgimg.setAttributeNS(null, 'height', image_props.height);
-	svgimg.setAttributeNS(null, 'width', image_props.width);
+
+	let scale_pct = 100 * image_props.scale;
+	
+	svgimg.setAttributeNS(null, 'height', scale_pct + "%");
+	svgimg.setAttributeNS(null, 'width',  scale_pct + "%");
 	svgimg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', image_props.ref);
 	svgimg.setAttributeNS(null,'x', image_props.x);
 	svgimg.setAttributeNS(null,'y', image_props.y);
@@ -585,6 +605,19 @@ oscPort.open();
 oscPort.on("message", function (msg) {
     
     switch(msg.address) {
+
+    case "/voice/repeatmarks": {
+	var stave = msg.args[0].value;
+	var barsToRepeat = msg.args[1].value;
+
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+
+	staves[stave].barsToRepeat = barsToRepeat;
+	
+	break;
+    }
 
     case "/voice/markcurrent": {
 	// whether the current note should be marked
@@ -671,6 +704,12 @@ oscPort.on("message", function (msg) {
 	render();
 	
 	break;
+    }
+    case "/global/preview": {
+	global_preview = msg.args[0].value;
+	for (const [name, stave_props] of Object.entries(staves)) {
+	    stave_props.preview_notes = global_preview;
+	}
     }
     case "/voice/previewnotes": {
 	var stave = msg.args[0].value;
@@ -778,7 +817,8 @@ oscPort.on("message", function (msg) {
 	}
 
 	if (staves[stave].preview_notes === undefined) {
-	    staves[stave].preview_notes = 2;
+	    // no preview per default
+	    staves[stave].preview_notes = global_preview;
 	}
 
 	// default is 4/4
@@ -921,6 +961,7 @@ oscPort.on("message", function (msg) {
 	var ref = msg.args[1].value;
 	var x = msg.args[2].value;
 	var y = msg.args[3].value;
+	var scale = msg.args[4].value;
 
 	if (images[image] === undefined) {
 	    images[image] = {};
@@ -929,8 +970,10 @@ oscPort.on("message", function (msg) {
 	images[image].x = x;		
 	images[image].y = y;
 
-	images[image].width = 200;		
-	images[image].height = 200;	
+	images[image].scale = scale;
+
+	//images[image].width = 200;		
+	//images[image].height = 200;	
 	
 	images[image].ref = ref;
 	console.log(ref)
