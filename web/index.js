@@ -435,6 +435,8 @@ function render() {
 	    stave_props.timesignature.lower,
 	    stave_props.pad
 	);
+
+	let num_measures = measures.length;
 	
 	// estimate width
 	let rect_width = (measures.length * 240) + 110;
@@ -461,15 +463,17 @@ function render() {
 	    label.textContent = stave_props.label;
 	    svg.appendChild(label);	   
 	}
-
-	// repeat marks? 
-	var beg_bar_type = 1;
-	if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
-	    beg_bar_type = 4; 
-	}
-	
+			
 	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
-	stave_measure_0.setBegBarType(beg_bar_type);
+
+	// repeat marks
+	if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
+	    stave_measure_0.setBegBarType(4);
+	    if (stave_props.barsToRepeat == 1) {
+		// only one bar to be repeated?
+		stave_measure_0.setEndBarType(5);
+	    }		
+	}	
 	stave_measure_0
 	    .addClef(stave_props.clef)
 	    .addTimeSignature(stave_props.timesignature.upper + "/" + stave_props.timesignature.lower)	    
@@ -535,16 +539,26 @@ function render() {
 	    width += stave_measure.width;
 	}	
 
+	
+	
 	if (notes_measure_last !== undefined) {
-	    const stave_measure = new Stave(width, stave_props.y, 240);	   
+	    const stave_measure = new Stave(width, stave_props.y, 240);
+	    if (num_measures == stave_props.barsToRepeat) {
+		stave_measure.setEndBarType(5);
+	    }
+	    // if the time signature of the last bar is the same,
+	    // we don't need to add it explicitly
 	    if (last_signature[0] === signature[0] && last_signature[1] === signature[1]) {
 		stave_measure		
 		    .setContext(context).draw();	    	    
 	    } else {
+		// otherwise, add it explicitly
 		stave_measure
 		    .addTimeSignature(last_signature[0] + "/" + last_signature[1])	    
 		    .setContext(context).draw();	    	    
 	    }
+
+	    
 	    	    	    
 	    formatAndDraw(context, stave_measure, notes_measure_last, { signature: last_signature });
 	}
