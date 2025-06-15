@@ -437,6 +437,7 @@ function render() {
 	);
 
 	let num_measures = measures.length;
+	let notes_rendered = 0;
 	
 	// estimate width
 	let rect_width = (measures.length * 240) + 110;
@@ -465,6 +466,7 @@ function render() {
 	}
 			
 	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
+	
 
 	// repeat marks
 	if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
@@ -505,7 +507,8 @@ function render() {
 	    	
 	// first bar
 	let notes_measure_0 = measures.shift();
-
+	notes_rendered += notes_measure_0.length;
+	
 	// last bar
 	var notes_measure_last = undefined;	
 	if (measures.length > 0) {
@@ -524,6 +527,7 @@ function render() {
 	let width = stave_measure_0.width + stave_measure_0.x;
 		
 	for (const [n, notes_measure] of Object.entries(measures)) {
+
 	    const stave_measure = new Stave(width, stave_props.y, 240);	   
 	    if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
 
@@ -537,9 +541,9 @@ function render() {
 	    stave_measure.setContext(context).draw();	    	    
 	    formatAndDraw(context, stave_measure, notes_measure, { signature: signature });
 	    width += stave_measure.width;
+	    notes_rendered += notes_measure.length;
 	}	
 
-	
 	
 	if (notes_measure_last !== undefined) {
 	    const stave_measure = new Stave(width, stave_props.y, 240);
@@ -551,7 +555,12 @@ function render() {
 	    if (last_signature[0] === signature[0] && last_signature[1] === signature[1]) {
 		stave_measure		
 		    .setContext(context).draw();	    	    
-	    } else {
+	    } else if (notes_rendered >= stave_props.num_notes) {
+		// assume preview notes don't cause a signature change
+		stave_measure		
+		    .setContext(context).draw();
+	    }
+	    else {
 		// otherwise, add it explicitly
 		stave_measure
 		    .addTimeSignature(last_signature[0] + "/" + last_signature[1])	    
@@ -723,8 +732,17 @@ oscPort.on("message", function (msg) {
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
 	}
+
+	let diff = staves[stave].num_notes - num_notes;
 	
 	staves[stave].num_notes = num_notes;
+
+	// correct size of notes array
+	if (diff > 0) {
+	    for (var i = 0; i < diff; i++) {
+		staves[stave].notes.shift()
+	    }
+	}
 
 	render();
 	
