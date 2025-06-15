@@ -15,10 +15,16 @@ It's still very much work-in-progress.
 
 You need `node.js` and `npm` installed on your system to run this (and a browser, of course).
 
+For instructions, see: https://nodejs.org/en/download
+
+On Linux, you can also use your distribution's package manager.
+
+## Build & Run
+
 To build, run `npm install && cd web && npm install` in this folder.
 
 Now, in the root folder, you can start the app using `node scoreviz.js` and see the result in the
-browser (`localhost:8082`).
+browser (`http://localhost:8082`).
 
 The application listens on port `57123` for OSC messages.
 
