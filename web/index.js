@@ -465,7 +465,6 @@ function render() {
 			
 	const stave_measure_0 = new Stave(stave_props.x, stave_props.y, 280);
 	
-
 	// repeat marks
 	if (stave_props.barsToRepeat !== undefined && stave_props.barsToRepeat !== 0) {
 	    stave_measure_0.setBegBarType(4);
@@ -564,9 +563,7 @@ function render() {
 		    .addTimeSignature(last_signature[0] + "/" + last_signature[1])	    
 		    .setContext(context).draw();	    	    
 	    }
-
-	    
-	    	    	    
+	    	    	    	    
 	    formatAndDraw(context, stave_measure, notes_measure_last, { signature: last_signature });
 	}
 
@@ -651,7 +648,8 @@ oscPort.on("message", function (msg) {
 	}
 
 	staves[stave].barsToRepeat = barsToRepeat;
-	
+
+	render();
 	break;
     }
  
@@ -666,8 +664,9 @@ oscPort.on("message", function (msg) {
 	
 	staves[stave].pad = Boolean(pad === 'true');
 
-	console.log("PAD " + staves[stave].pad);
-	
+	//console.log("PAD " + staves[stave].pad);
+
+	render();
 	break;
     }	
     case "/voice/pos": {
@@ -812,7 +811,6 @@ oscPort.on("message", function (msg) {
 	if (msg.args[4] !== undefined) {
 	    var text = msg.args[4].value;
 	}
-	
 	
 	if (staves[stave] === undefined) {
 	    staves[stave] = {};
@@ -991,9 +989,6 @@ oscPort.on("message", function (msg) {
 	images[image].y = y;
 
 	images[image].scale = scale;
-
-	//images[image].width = 200;		
-	//images[image].height = 200;	
 	
 	images[image].ref = ref;
 	console.log(ref)
