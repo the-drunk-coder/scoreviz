@@ -15,34 +15,81 @@ It's still very much work-in-progress.
 
 You need `node.js` and `npm` installed on your system to run this (and a browser, of course).
 
-For instructions, see: https://nodejs.org/en/download
+For OS-independent instructions, see: https://nodejs.org/en/download
 
-On Linux, you can also use your distribution's package manager.
+On Linux, you can also use your distribution's package manager. 
 
-## Build & Run
+The version of `node` and `npm` doesn't really matter, any half-recent version will do.
 
-To build, run `npm install && cd web && npm install` in this folder.
+## Build 
 
-Now, in the root folder, you can start the app using `node scoreviz.js` and see the result in the
-browser (`http://localhost:8082`).
+Download this repository (or use `git clone` from the command line) and place it in a convenient location.
+
+To build, navigate to the base folder (the folder that contains `scoreviz.js`) and run `npm install`. 
+
+Then, go to the `web` subfolder (`cd web`) and run `npm install` again.
+
+You can also use a single shorthand command from the base folder: `npm i && cd web && npm i`.
+
+## Run
+
+Now, in the base folder, you can start the app using `node scoreviz.js`.
+
+Open a browser and go to `http://localhost:8082`.
 
 The application listens on port `57123` for OSC messages.
 
 ## OSC Interface
 
-Format: `address` - `osc typestring` - meaning
+Format: `address` - `osc typestring` - meaning - arguments
 
-* `/voice/note/add` - `sss` - Add note (arg1 - note) with duration (arg2 - note duration) to voice (arg0 - voice id). For note format, check vexflow documentation. 
-* `/voice/pos` - 
-* `/voice/bgcolor` - `ss` - Set background color (arg1 - color in hex format) of voice (arg0 - voice id).
-* `/voice/label` - `ss` - Add a label (arg1 - label string) to voice (arg0 - voice id).
-* `/voice/dyn` - `ss` - Add a dynamic symbol (arg1 - dynamic, i.e. *p* or *pp*) to voice (arg0 - voice id).
-* `/voice/clef` - `ss` - Add a clef symbol (arg1 - dynamic, i.e. *treble*) to voice (arg0 - voice id).
-* `/voice/pad` - `ss` - Pad mode (arg1 - "true" or "false" as string) for voice (arg0 - voice id), pads the last bar with rest for easier playability.
-* `/voice/numnotes` - `sf` - Number of notes (arg1) to be displayed in voice (arg0 - voice id). Notes are treated like a queue, if there's more than the specified number, the ones in the beginning will be dropped.
-* `/voice/timesignature` - `sff` - Timesignature upper (arg1) and lower (arg2) for voice (arg0 - voice id).
-* `/voice/markcurrent` - tbd
-* `/textfield/put` - `ssff` - Put a textfield on the score. arg0 - textbox id, arg1 - content, arg2 - x pos, arg3 - y pos.
-* `/image/put` - `ssff` - Put an image on the score. arg0 - image id, arg1 - image link, arg2 - x pos, arg3 - y pos.
+* `/voice/note/add` - `ssss` - Add note. For note pitch format, check vexflow documentation. 
+  * argument 0 - voice id
+  * argument 1 - note pitch
+  * argument 2 - note duration
+  * argument 3 - note articulation ("marcato", "tenuto" or "staccato")
+* `/voice/pos` - `ff` - set the position of a voice
+  * argument 0 - `x` position
+  * argument 1 - `position`
+* `/voice/bgcolor` - `ss` - Set background color 
+  * argument 0 - voice id.
+  * argument 1 - color in hex format
+* `/voice/label` - `ss` - Add a label to voice 
+  * argument 0 - voice id
+  * argument 1 - label
+* `/voice/dyn` - `ss` - Add a dynamic symbol to voice 
+  * argument 0 - voice id
+  * argument 1 - dynamic symbol, i.e. *p* or *pp*
+* `/voice/clef` - `ss` - Add a clef to voice
+  * argument 0 - voice id
+  * argument 1 - clef, *treble*, *alto* or *bass*
+* `/voice/pad` - `ss` - Pad mode for voice. Pads the last bar with rest for easier playability.
+  * argument 0 - voice id
+  * argument 1 - "true" or "false" as string
+* `/voice/numnotes` - `sf` - Number of notes to be displayed in voice. Notes are treated like a queue, if there are more than the specified number, the ones in the beginning will be dropped.
+  * argument 0 - voice id
+  * argument 1 - number of notes
+* `/voice/repeatmarks` - `sf` - Add repeat marks to specified number of bars
+  * argument 0 - voice id
+  * argument 1 - number of bars to enclose in repeat marks
+* `/voice/timesignature` - `sff` - Timesignature for voice.
+  * argument 0 - voice id
+  * argument 1 - upper 
+  * argument 2 - lower
+* `/textfield/put` - `ssfffssf` - Put a textfield on the score. 
+  * argument 0 - textfield id
+  * argument 1 - content string 
+  * argument 2 - x pos 
+  * argument 3 - y pos
+  * argument 4 - font size
+  * argument 5 - font color (hex string without `#` prefix)
+  * argument 6 - flash (fade in) - "true" or "false" as string
+  * argument 7 - flash time (seconds)
+* `/image/put` - `ssfff` - Put an image on the score. 
+  * argument 0 - image id, 
+  * argument 1 - image link
+  * argument 2 - x pos
+  * argument 3 - y pos
+  * argument 4 - scale factor
 * `/clear` - `(none)` - clear the entire score
 

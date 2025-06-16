@@ -15,19 +15,17 @@ var global_preview = 0;
 
 // next features to develop:
 
-// - preview notes, maybe like markcurrent, a different color ? different size "stichnote" would be great but also
-//   expensive space-wise ...
-// - colored textboxes
-
 // - percussion notation
 // - triplets, uneven durations ?
 // - how to integrate images better ?
 
 // - score name
-// - group staves, 
-// - "snippet mode" bs "rt mode (change always, mark current)" - this might not be too effective ...
-// - repetition bar ends for easiear readability, maybe global? 
+// - group staves
 
+// - [x] preview notes, a different color ? different size "stichnote" would be great but also expensive space-wise ...
+// - [x] colored textboxes
+// - [x] repetition bar ends for easiear readability, maybe global? 
+// - [x] remove idea of "snippet mode" bs "rt mode (change always, mark current)" - this might not be too effective ...
 // - [x] lyrics ..
 // - [x] a visual metronome - this can already be done with timed textboxes from Mégra
 // - [x] cute additions (emojis for playing style ?) (text labels and images can be cute)
@@ -629,12 +627,16 @@ oscPort.on("message", function (msg) {
     
     switch(msg.address) {
 
+    case "/clear":
     case "/clearall": {
+
 	// reset to initial state
 	staves = {};
 	textfields = {};
 	images = {};
 	global_preview = 0;
+
+	div.innerHTML = '';
 	
 	render();
 	break;
@@ -652,20 +654,7 @@ oscPort.on("message", function (msg) {
 	
 	break;
     }
-
-    case "/voice/markcurrent": {
-	// whether the current note should be marked
-	var stave = msg.args[0].value;
-	var mark = msg.args[1].value;
-
-	if (staves[stave] === undefined) {
-	    staves[stave] = {};
-	}
-
-	staves[stave].markcurrent = Boolean(mark === 'true');
-	
-	break;
-    }
+ 
     case "/voice/pad": {
 	// whether the voice should be padded to a full bar
 	var stave = msg.args[0].value;
@@ -851,10 +840,6 @@ oscPort.on("message", function (msg) {
 	    staves[stave].y = 10 + 100 * (Object.keys(staves).length - 1);
 	}
 	
-	if (staves[stave].markcurrent === undefined) {
-	    staves[stave].markcurrent = Boolean(false);
-	}
-
 	if (staves[stave].num_notes === undefined) {
 	    staves[stave].num_notes = 8;
 	}
@@ -956,14 +941,7 @@ oscPort.on("message", function (msg) {
 		}
 	    }
 	}
-	
-	if (staves[stave].markcurrent) {
-	    // set the current note to a different color ...
-	    staves[stave].notes[0].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
-	    staves[stave].notes[1].setStyle({ fillStyle: "#FF0000", strokeStyle: "#FF0000" })
-	    staves[stave].notes[2].setStyle({ fillStyle: "#000000", strokeStyle: "#000000" })
-	}
-	
+		
 	render();
 
 	break;
@@ -988,7 +966,6 @@ oscPort.on("message", function (msg) {
 	textfields[textfield].color = "#" + col;
 	textfields[textfield].flash = flash;
 	textfields[textfield].flashTime = flashTime;
-	
 	
 	textfields[textfield].fontsize = fontSize;	
 
@@ -1024,10 +1001,6 @@ oscPort.on("message", function (msg) {
 	render();
 	
 	break;
-    }
-    case "/clear": {	  	  
-	self.staves = {}
-	div.innerHTML = '';
     }
     }            
 });
