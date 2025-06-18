@@ -587,7 +587,14 @@ function render() {
 	    let anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
 	    anim.setAttributeNS(null, 'attributeName', 'fill');
 	    //anim.setAttributeNS(null, 'repeatCount', '1');
-	    anim.setAttributeNS(null, 'values', textfield_props.color+";white");
+
+	    // if time is negative, fade in, else, fade out 
+	    if (flashTime < 0) {
+		anim.setAttributeNS(null, 'values', "white;"+textfield_props.color);
+	    } else {
+		anim.setAttributeNS(null, 'values', textfield_props.color+";white");
+	    }
+
 	    anim.setAttributeNS(null, 'dur', textfield_props.flashTime + "s");
 	    anim.setAttributeNS(null, 'fill', 'freeze');
 	    console.log(anim);
@@ -734,6 +741,18 @@ oscPort.on("message", function (msg) {
 
 	render();
 	
+	break;
+    }
+    case "/voice/clearnotes": {
+	var stave = msg.args[0].value;
+
+	if (staves[stave] === undefined) {
+	    staves[stave] = {};
+	}
+	
+	staves[stave].notes = [];
+	render();
+
 	break;
     }
     case "/global/preview": {
