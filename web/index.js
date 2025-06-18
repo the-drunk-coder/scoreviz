@@ -600,7 +600,7 @@ function render() {
 
 	    anim.setAttributeNS(null, 'dur', effectiveFlashTime + "s");
 	    anim.setAttributeNS(null, 'fill', 'freeze');
-	    console.log(anim);
+	    //console.log(anim);
 	    text.appendChild(anim);
 	}
 	
