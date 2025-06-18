@@ -588,14 +588,17 @@ function render() {
 	    anim.setAttributeNS(null, 'attributeName', 'fill');
 	    //anim.setAttributeNS(null, 'repeatCount', '1');
 
-	    // if time is negative, fade in, else, fade out 
-	    if (flashTime < 0) {
+	    // if time is negative, fade in, else, fade out
+	    let effectiveFlashTime = 0; 
+	    if (textfield_props.flashTime < 0) {
+		effectiveFlashTime = -textfield_props.flashTime;
 		anim.setAttributeNS(null, 'values', "white;"+textfield_props.color);
 	    } else {
+		effectiveFlashTime = -textfield_props.flashTime;
 		anim.setAttributeNS(null, 'values', textfield_props.color+";white");
 	    }
 
-	    anim.setAttributeNS(null, 'dur', textfield_props.flashTime + "s");
+	    anim.setAttributeNS(null, 'dur', effectiveFlashTime + "s");
 	    anim.setAttributeNS(null, 'fill', 'freeze');
 	    console.log(anim);
 	    text.appendChild(anim);
